@@ -2,6 +2,7 @@ public class MailWebView : Gtk.ScrolledWindow {
 	public WebKit.WebView webview;
 	private bool external_res = false;
 	private bool allow_external = false;
+	public bool follow_links = true;
 
 	/* This signal is triggered if a remote resource access was denied */
 	public signal void rejected_access();
@@ -25,12 +26,19 @@ public class MailWebView : Gtk.ScrolledWindow {
 	}
 
 
+	private bool console_message(string message, int line_no, string source_id) {
+		stdout.printf("%s:%i: %s\n", source_id, line_no, message);
+		return true;
+	}
+
+
 	private void set_access_policy() {
 		this.webview.settings.enable_plugins = false;
 		this.webview.settings.enable_scripts = false;
 		this.webview.settings.enable_private_browsing = true;
 		this.webview.navigation_policy_decision_requested.connect(this.decide_load_policy);
 		this.webview.resource_request_starting.connect(this.decide_resource_load);
+		this.webview.console_message.connect(this.console_message);
 	}
 
 
@@ -52,9 +60,10 @@ public class MailWebView : Gtk.ScrolledWindow {
 		this.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC);
 	}
 
-	public void view_string(string content, bool allow_external) {
+	public void view_string(string content, bool allow_external, bool view_source) {
 		this.allow_external = allow_external;
 		this.reset_view();
+		this.webview.set_view_source_mode(view_source);
 		this.webview.load_string(content, "text/html", "utf-8", "");
 	}
 
